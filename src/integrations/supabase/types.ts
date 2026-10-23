@@ -14,7 +14,187 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      drafts: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          owner_id: string | null
+          personalization: Json
+          session_reference: string
+          status: string
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          owner_id?: string | null
+          personalization?: Json
+          session_reference: string
+          status?: string
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          owner_id?: string | null
+          personalization?: Json
+          session_reference?: string
+          status?: string
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drafts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      templates: {
+        Row: {
+          base_price_paise: number
+          category_id: string | null
+          configuration: Json
+          created_at: string
+          currency: string
+          description: string | null
+          discount_amount_paise: number
+          experience_type: string
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          is_new: boolean
+          name: string
+          popularity: number
+          slug: string
+          sort_order: number
+          tagline: string | null
+          thumbnail_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          base_price_paise: number
+          category_id?: string | null
+          configuration?: Json
+          created_at?: string
+          currency?: string
+          description?: string | null
+          discount_amount_paise?: number
+          experience_type: string
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          is_new?: boolean
+          name: string
+          popularity?: number
+          slug: string
+          sort_order?: number
+          tagline?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          base_price_paise?: number
+          category_id?: string | null
+          configuration?: Json
+          created_at?: string
+          currency?: string
+          description?: string | null
+          discount_amount_paise?: number
+          experience_type?: string
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          is_new?: boolean
+          name?: string
+          popularity?: number
+          slug?: string
+          sort_order?: number
+          tagline?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "templates_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      testimonials: {
+        Row: {
+          author_display_name: string
+          content: string
+          created_at: string
+          id: string
+          is_approved: boolean
+          location: string | null
+          rating: number
+        }
+        Insert: {
+          author_display_name: string
+          content: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          location?: string | null
+          rating: number
+        }
+        Update: {
+          author_display_name?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          location?: string | null
+          rating?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
