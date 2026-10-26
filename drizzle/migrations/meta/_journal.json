@@ -8,6 +8,13 @@
       "when": 1792748914508,
       "tag": "0000_create_heartmuse_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793029192055,
+      "tag": "0001_card_media_upload_policy",
+      "breakpoints": true
     }
   ]
 }
