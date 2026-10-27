@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { TemplateCard } from "@/components/template-card";
 
-export const Route = createFileRoute("/cards")({
+export const Route = createFileRoute("/cards/")({
   validateSearch: (search: Record<string, unknown>) => ({
     category: typeof search.category === "string" ? search.category : undefined,
   }),
