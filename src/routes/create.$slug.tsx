@@ -1,0 +1,470 @@
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useRef, useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Copy,
+  ImagePlus,
+  Loader2,
+  MessageCircle,
+  PartyPopper,
+  Trash2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { getTemplate } from "@/lib/catalog.functions";
+import { createDraft } from "@/lib/drafts.functions";
+import { getExperience } from "@/components/experiences/registry";
+import { formatPaise } from "@/lib/format";
+import { supabase } from "@/integrations/supabase/client";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import type { ExperiencePersonalization } from "@/components/experiences/experience-frame";
+
+const MAX_PHOTOS = 6;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+
+type PhotoItem = { path: string; previewUrl: string };
+
+export const Route = createFileRoute("/create/$slug")({
+  loader: async ({ params }) => {
+    const template = await getTemplate(params.slug);
+    if (!template) throw notFound();
+    return { template };
+  },
+  head: ({ loaderData }) => {
+    const name = loaderData?.template.name;
+    return {
+      meta: [
+        {
+          title: name ? `Personalise ${name} — HeartMuse` : "Create a card — HeartMuse",
+        },
+        {
+          name: "description",
+          content:
+            "Add their name, your message and photos. Watch the card come alive in a live preview, then share one link.",
+        },
+        {
+          property: "og:title",
+          content: name ? `Personalise ${name} — HeartMuse` : "Create a card — HeartMuse",
+        },
+        {
+          property: "og:description",
+          content: "Personalise an interactive card with your words and photos, then share it.",
+        },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+    };
+  },
+  component: CreateCard,
+  errorComponent: () => (
+    <div className="flex min-h-screen items-center justify-center px-4 text-center">
+      <p className="text-sm text-muted-foreground">The page didn't load. Please refresh.</p>
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
+      <p className="font-display text-2xl font-semibold text-foreground">Card not found</p>
+      <Button asChild className="mt-2 rounded-xl">
+        <Link to="/cards">Browse cards</Link>
+      </Button>
+    </div>
+  ),
+});
+
+function CreateCard() {
+  const { template } = Route.useLoaderData();
+  const navigate = useNavigate();
+  const meta = getExperience(template.experienceType);
+  const Experience = meta?.component;
+
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [recipientName, setRecipientName] = useState("");
+  const [senderName, setSenderName] = useState("");
+  const [message, setMessage] = useState("");
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [reference, setReference] = useState<string | null>(null);
+  const uploadToken = useRef<string | null>(null);
+
+  const createDraftFn = useServerFn(createDraft);
+
+  if (!meta || !Experience) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
+        <p className="font-display text-2xl font-semibold text-foreground">
+          This card is being crafted
+        </p>
+        <Button asChild className="mt-2 rounded-xl">
+          <Link to="/cards">Browse cards</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const messageField = meta.fields.find((f) => f.key === "message");
+  const detailsValid =
+    recipientName.trim().length > 0 &&
+    senderName.trim().length > 0 &&
+    message.trim().length > 0;
+  const photosValid = !meta.needsPhotos || photos.length > 0;
+  const canContinue = detailsValid && photosValid;
+
+  const personalization: ExperiencePersonalization = {
+    recipientName: recipientName.trim() || "Someone special",
+    senderName: senderName.trim() || "With love",
+    message:
+      message.trim() ||
+      (messageField?.placeholder ?? "Every word here is just for you."),
+    photos: photos.map((p) => p.previewUrl),
+  };
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const room = MAX_PHOTOS - photos.length;
+    if (room <= 0) {
+      toast.error(`You can add up to ${MAX_PHOTOS} photos.`);
+      return;
+    }
+    const accepted: File[] = [];
+    for (const file of Array.from(files).slice(0, room)) {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not an image.`);
+        continue;
+      }
+      if (file.size > MAX_FILE_BYTES) {
+        toast.error(`${file.name} is larger than 10 MB.`);
+        continue;
+      }
+      accepted.push(file);
+    }
+    if (accepted.length === 0) return;
+
+    setUploading(true);
+    try {
+      if (!uploadToken.current) uploadToken.current = crypto.randomUUID();
+      const saved: PhotoItem[] = [];
+      for (const [i, file] of accepted.entries()) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const path = `card-media/${uploadToken.current}/${photos.length + i}-${safeName}`;
+        const { error } = await supabase.storage.from("card-media").upload(path, file, {
+          contentType: file.type,
+        });
+        if (error) throw new Error(error.message);
+        saved.push({ path, previewUrl: URL.createObjectURL(file) });
+      }
+      setPhotos((prev) => [...prev, ...saved]);
+      toast.success(saved.length === 1 ? "Photo added." : `${saved.length} photos added.`);
+    } catch {
+      toast.error("Uploading didn't work. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removePhoto = (item: PhotoItem) => {
+    setPhotos((prev) => prev.filter((p) => p !== item));
+  };
+
+  const finish = async () => {
+    setSaving(true);
+    try {
+      const result = await createDraftFn({
+        data: {
+          templateSlug: template.slug,
+          personalization: {
+            recipientName: recipientName.trim(),
+            senderName: senderName.trim(),
+            message: message.trim(),
+            photos: photos.map((p) => p.path),
+          },
+        },
+      });
+      setReference(result.reference);
+      setStep(3);
+      toast.success("Your card is ready to share!");
+    } catch {
+      toast.error("Saving your card didn't work. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const shareUrl = reference ? `${window.location.origin}/c/${reference}` : "";
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copied!");
+    } catch {
+      toast.error("Couldn't copy — long-press the link instead.");
+    }
+  };
+
+  const stepLabels = ["Details", "Preview", "Share"];
+
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <SiteHeader />
+      <main className="flex-1">
+        <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/cards/$slug", params: { slug: template.slug } })}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" />
+            Back to card
+          </button>
+
+          <h1 className="mt-4 font-display text-3xl font-semibold text-foreground sm:text-4xl">
+            Personalise: {template.name}
+          </h1>
+          <div className="mt-4 flex items-center gap-2">
+            {stepLabels.map((label, i) => (
+              <div key={label} className="flex items-center gap-2">
+                <span
+                  className={`flex size-7 items-center justify-center rounded-full text-xs font-semibold ${
+                    step > i
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {step > i + 1 ? <Check className="size-3.5" /> : i + 1}
+                </span>
+                <span
+                  className={`text-sm font-medium ${
+                    step > i ? "text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {label}
+                </span>
+                {i < stepLabels.length - 1 && <span className="h-px w-6 bg-border sm:w-10" />}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 grid items-start gap-10 lg:grid-cols-[1fr_0.95fr]">
+            {/* Form column */}
+            <div>
+              {step === 1 && (
+                <div className="rounded-3xl border border-border bg-card p-6 shadow-card sm:p-8">
+                  <h2 className="font-display text-xl font-semibold text-foreground">
+                    The details
+                  </h2>
+                  <div className="mt-6 space-y-5">
+                    {meta.fields.map((field) => (
+                      <div key={field.key} className="space-y-2">
+                        <Label htmlFor={field.key}>{field.label}</Label>
+                        {field.multiline ? (
+                          <Textarea
+                            id={field.key}
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            placeholder={field.placeholder}
+                            rows={4}
+                            maxLength={2000}
+                          />
+                        ) : (
+                          <Input
+                            id={field.key}
+                            value={field.key === "recipientName" ? recipientName : senderName}
+                            onChange={(e) =>
+                              field.key === "recipientName"
+                                ? setRecipientName(e.target.value)
+                                : setSenderName(e.target.value)
+                            }
+                            placeholder={field.placeholder}
+                            maxLength={60}
+                          />
+                        )}
+                      </div>
+                    ))}
+
+                    {meta.needsPhotos && (
+                      <div className="space-y-3 rounded-2xl border border-border bg-background p-4">
+                        <div className="flex items-center justify-between">
+                          <Label>
+                            Photos ({photos.length}/{MAX_PHOTOS})
+                          </Label>
+                          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+                            {uploading ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <ImagePlus className="size-3.5" />
+                            )}
+                            Add photos
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => {
+                                void handleFiles(e.target.files);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                        </div>
+                        {photos.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">
+                            The first photo hides inside the puzzle. Add 1–6 photos, up to 10 MB
+                            each.
+                          </p>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                            {photos.map((photo, i) => (
+                              <div
+                                key={photo.path}
+                                className="group relative overflow-hidden rounded-xl border border-border"
+                              >
+                                <img
+                                  src={photo.previewUrl}
+                                  alt={`Photo ${i + 1}`}
+                                  className="aspect-square w-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removePhoto(photo)}
+                                  aria-label={`Remove photo ${i + 1}`}
+                                  className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-background/80 text-foreground transition-colors hover:bg-destructive hover:text-destructive-foreground"
+                                >
+                                  <Trash2 className="size-3.5" />
+                                </button>
+                                {i === 0 && (
+                                  <span className="absolute bottom-1.5 left-1.5 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-semibold text-foreground">
+                                    In puzzle
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    size="lg"
+                    className="mt-6 w-full rounded-xl sm:w-auto"
+                    disabled={!canContinue}
+                    onClick={() => setStep(2)}
+                  >
+                    Preview the magic
+                    <ArrowRight className="ml-1 size-4" />
+                  </Button>
+                  {!canContinue && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {detailsValid
+                        ? "Add at least one photo to continue."
+                        : "Fill in every detail to continue."}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {step === 2 && (
+                <div className="rounded-3xl border border-border bg-card p-6 shadow-card sm:p-8">
+                  <h2 className="font-display text-xl font-semibold text-foreground">
+                    Looks right?
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Play with the preview. Go back any time to change your words.
+                  </p>
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <Button
+                      size="lg"
+                      className="rounded-xl"
+                      onClick={() => void finish()}
+                      disabled={saving}
+                    >
+                      {saving && <Loader2 className="mr-1 size-4 animate-spin" />}
+                      Save & get my link
+                    </Button>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="rounded-xl"
+                      onClick={() => setStep(1)}
+                    >
+                      Edit details
+                    </Button>
+                  </div>
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Launch price {formatPaise(template.pricePaise)} · payments open soon ·
+                    sharing this preview link is free.
+                  </p>
+                </div>
+              )}
+
+              {step === 3 && reference && (
+                <div className="rounded-3xl border border-border bg-card p-6 shadow-card sm:p-8">
+                  <div className="flex items-center gap-3">
+                    <span className="flex size-11 items-center justify-center rounded-xl bg-coral/15 text-coral">
+                      <PartyPopper className="size-5" />
+                    </span>
+                    <div>
+                      <h2 className="font-display text-xl font-semibold text-foreground">
+                        Your card is live
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        Send this link to {personalization.recipientName}.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-5 flex items-center gap-2 rounded-xl border border-border bg-background p-3">
+                    <p className="flex-1 truncate text-sm text-foreground">{shareUrl}</p>
+                    <Button size="sm" variant="secondary" onClick={() => void copyLink()}>
+                      <Copy className="mr-1 size-3.5" />
+                      Copy
+                    </Button>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <Button asChild size="lg" className="rounded-xl bg-primary">
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(
+                          `I made something for you 💌 ${shareUrl}`,
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <MessageCircle className="mr-1 size-4" />
+                        Share on WhatsApp
+                      </a>
+                    </Button>
+                    <Button asChild size="lg" variant="outline" className="rounded-xl">
+                      <Link to="/c/$reference" params={{ reference }}>
+                        Open your card
+                      </Link>
+                    </Button>
+                  </div>
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    The link works for 90 days. Payments open soon — until then, sharing is
+                    completely free.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Live preview column */}
+            <div className="relative mx-auto w-full max-w-md lg:sticky lg:top-24">
+              <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-lavender via-background to-coral/20 blur-2xl" />
+              <Experience personalization={personalization} mode="live" />
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                {step === 3 ? "This is the exact card they'll receive." : "Live preview — updates as you type."}
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}

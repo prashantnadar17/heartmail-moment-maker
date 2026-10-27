@@ -10,33 +10,80 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CReferenceRouteImport } from './routes/c.$reference'
+import { Route as CardsIndexRouteImport } from './routes/cards.index'
+import { Route as CardsSlugRouteImport } from './routes/cards.$slug'
+import { Route as CreateSlugRouteImport } from './routes/create.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CReferenceRoute = CReferenceRouteImport.update({
+  id: '/c/$reference',
+  path: '/c/$reference',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CardsIndexRoute = CardsIndexRouteImport.update({
+  id: '/cards/',
+  path: '/cards/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CardsSlugRoute = CardsSlugRouteImport.update({
+  id: '/cards/$slug',
+  path: '/cards/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateSlugRoute = CreateSlugRouteImport.update({
+  id: '/create/$slug',
+  path: '/create/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/c/$reference': typeof CReferenceRoute
+  '/cards/$slug': typeof CardsSlugRoute
+  '/create/$slug': typeof CreateSlugRoute
+  '/cards/': typeof CardsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/c/$reference': typeof CReferenceRoute
+  '/cards/$slug': typeof CardsSlugRoute
+  '/create/$slug': typeof CreateSlugRoute
+  '/cards': typeof CardsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/c/$reference': typeof CReferenceRoute
+  '/cards/$slug': typeof CardsSlugRoute
+  '/create/$slug': typeof CreateSlugRoute
+  '/cards/': typeof CardsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    '/' | '/c/$reference' | '/cards/$slug' | '/create/$slug' | '/cards/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/c/$reference' | '/cards/$slug' | '/create/$slug' | '/cards'
+  id:
+    | '__root__'
+    | '/'
+    | '/c/$reference'
+    | '/cards/$slug'
+    | '/create/$slug'
+    | '/cards/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CReferenceRoute: typeof CReferenceRoute
+  CardsSlugRoute: typeof CardsSlugRoute
+  CreateSlugRoute: typeof CreateSlugRoute
+  CardsIndexRoute: typeof CardsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +95,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/c/$reference': {
+      id: '/c/$reference'
+      path: '/c/$reference'
+      fullPath: '/c/$reference'
+      preLoaderRoute: typeof CReferenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cards/': {
+      id: '/cards/'
+      path: '/cards'
+      fullPath: '/cards/'
+      preLoaderRoute: typeof CardsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cards/$slug': {
+      id: '/cards/$slug'
+      path: '/cards/$slug'
+      fullPath: '/cards/$slug'
+      preLoaderRoute: typeof CardsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create/$slug': {
+      id: '/create/$slug'
+      path: '/create/$slug'
+      fullPath: '/create/$slug'
+      preLoaderRoute: typeof CreateSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CReferenceRoute: CReferenceRoute,
+  CardsSlugRoute: CardsSlugRoute,
+  CreateSlugRoute: CreateSlugRoute,
+  CardsIndexRoute: CardsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
