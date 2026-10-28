@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatPaise } from "@/lib/format";
-import { experiences, getExperience } from "@/components/experiences/registry";
+import { getExperience } from "@/components/experiences/registry";
 
 describe("formatPaise", () => {
   it("renders ₹249 for 24900 paise (default template price)", () => {
