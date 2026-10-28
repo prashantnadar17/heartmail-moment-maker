@@ -80,7 +80,7 @@ export const getDraftByReference = createServerFn({ method: "GET" })
     };
 
     let photoUrls: string[] = [];
-    const paths = (p.photos ?? []).filter((path) => path.startsWith("card-media/"));
+    const paths = (p.photos ?? []).filter((path) => !path.startsWith("http"));
     if (paths.length > 0) {
       const { data: signed, error: signError } = await supabaseAdmin.storage
         .from("card-media")

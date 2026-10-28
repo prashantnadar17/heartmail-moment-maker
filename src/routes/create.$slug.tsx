@@ -153,7 +153,8 @@ function CreateCard() {
       const saved: PhotoItem[] = [];
       for (const [i, file] of accepted.entries()) {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-        const path = `card-media/${uploadToken.current}/${photos.length + i}-${safeName}`;
+        // Path is relative to the "card-media" bucket.
+        const path = `${uploadToken.current}/${photos.length + i}-${safeName}`;
         const { error } = await supabase.storage.from("card-media").upload(path, file, {
           contentType: file.type,
         });
