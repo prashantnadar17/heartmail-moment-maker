@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/cards/$slug")({
   loader: async ({ params }) => {
-    const template = await getTemplate(params.slug);
+    const template = await getTemplate({ data: params.slug });
     if (!template) throw notFound();
     return { template };
   },
@@ -44,7 +44,7 @@ export const Route = createFileRoute("/cards/$slug")({
       <p className="font-display text-2xl font-semibold text-foreground">Card not found</p>
       <p className="text-sm text-muted-foreground">It may have been retired.</p>
       <Button asChild className="mt-2 rounded-xl">
-        <Link to="/cards">Browse cards</Link>
+        <Link to="/cards" search={{ category: undefined }}>Browse cards</Link>
       </Button>
     </div>
   ),
@@ -62,7 +62,7 @@ function CardDetail() {
       <main className="flex-1">
         <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
           <Link
-            to="/cards"
+            to="/cards" search={{ category: undefined }}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
@@ -131,7 +131,7 @@ function CardDetail() {
             {/* Live demo */}
             <div className="relative mx-auto w-full max-w-md lg:sticky lg:top-24">
               <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-lavender via-background to-coral/20 blur-2xl" />
-              {Demo ? (
+              {Demo && meta ? (
                 <Demo mode="demo" personalization={meta.demo} />
               ) : (
                 <p className="text-sm text-muted-foreground">Preview coming soon.</p>

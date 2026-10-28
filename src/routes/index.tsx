@@ -67,13 +67,13 @@ function Index() {
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="rounded-xl">
-                  <Link to="/cards">
+                  <Link to="/cards" search={{ category: undefined }}>
                     Create a card
                     <ArrowRight className="ml-1 size-4" />
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="rounded-xl">
-                  <Link to="/cards">Browse experiences</Link>
+                  <Link to="/cards" search={{ category: undefined }}>Browse experiences</Link>
                 </Button>
               </div>
               <p className="mt-4 text-xs text-muted-foreground">
@@ -111,7 +111,7 @@ function Index() {
               </p>
             </div>
             <Link
-              to="/cards"
+              to="/cards" search={{ category: undefined }}
               className="inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
             >
               View all
@@ -135,7 +135,7 @@ function Index() {
               {data.categories.map((category) => (
                 <Link
                   key={category.slug}
-                  to="/cards"
+                  to="/cards" search={{ category: undefined }}
                   search={{ category: category.slug }}
                   className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-accent"
                 >
@@ -230,7 +230,7 @@ function Index() {
               It takes two minutes. The memory lasts a lot longer.
             </p>
             <Button asChild size="lg" className="mt-8 rounded-xl">
-              <Link to="/cards">
+              <Link to="/cards" search={{ category: undefined }}>
                 Create your card
                 <ArrowRight className="ml-1 size-4" />
               </Link>

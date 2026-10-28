@@ -16,13 +16,13 @@ export function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-1 sm:gap-2">
           <Link
-            to="/cards"
+            to="/cards" search={{ category: undefined }}
             className="rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             Cards
           </Link>
           <Button asChild size="sm" className="rounded-xl">
-            <Link to="/cards">Create a card</Link>
+            <Link to="/cards" search={{ category: undefined }}>Create a card</Link>
           </Button>
         </nav>
       </div>

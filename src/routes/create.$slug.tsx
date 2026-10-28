@@ -33,7 +33,7 @@ type PhotoItem = { path: string; previewUrl: string };
 
 export const Route = createFileRoute("/create/$slug")({
   loader: async ({ params }) => {
-    const template = await getTemplate(params.slug);
+    const template = await getTemplate({ data: params.slug });
     if (!template) throw notFound();
     return { template };
   },
@@ -72,7 +72,7 @@ export const Route = createFileRoute("/create/$slug")({
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
       <p className="font-display text-2xl font-semibold text-foreground">Card not found</p>
       <Button asChild className="mt-2 rounded-xl">
-        <Link to="/cards">Browse cards</Link>
+        <Link to="/cards" search={{ category: undefined }}>Browse cards</Link>
       </Button>
     </div>
   ),
@@ -103,7 +103,7 @@ function CreateCard() {
           This card is being crafted
         </p>
         <Button asChild className="mt-2 rounded-xl">
-          <Link to="/cards">Browse cards</Link>
+          <Link to="/cards" search={{ category: undefined }}>Browse cards</Link>
         </Button>
       </div>
     );

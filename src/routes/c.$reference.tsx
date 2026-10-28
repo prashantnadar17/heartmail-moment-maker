@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/c/$reference")({
   loader: async ({ params }) => {
-    const draft = await getDraftByReference(params.reference);
+    const draft = await getDraftByReference({ data: params.reference });
     if (!draft) throw notFound();
     return { draft };
   },
@@ -43,7 +43,7 @@ export const Route = createFileRoute("/c/$reference")({
         But you can make one just as special.
       </p>
       <Button asChild className="mt-2 rounded-xl">
-        <Link to="/cards">Make a card</Link>
+        <Link to="/cards" search={{ category: undefined }}>Make a card</Link>
       </Button>
     </div>
   ),
@@ -72,7 +72,7 @@ function ViewCard() {
             Want to make someone else smile like this?
           </p>
           <Button asChild className="mt-4 rounded-xl">
-            <Link to="/cards">Make a card</Link>
+            <Link to="/cards" search={{ category: undefined }}>Make a card</Link>
           </Button>
         </div>
       </div>
