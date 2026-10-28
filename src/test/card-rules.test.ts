@@ -26,8 +26,8 @@ describe("experience registry", () => {
   });
 
   it("only the photo puzzle needs photos", () => {
-    expect(experiences["birthday"].needsPhotos).toBe(false);
-    expect(experiences["sorry"].needsPhotos).toBe(false);
-    expect(experiences["photo_puzzle"].needsPhotos).toBe(true);
+    expect(getExperience("birthday")?.needsPhotos).toBe(false);
+    expect(getExperience("sorry")?.needsPhotos).toBe(false);
+    expect(getExperience("photo_puzzle")?.needsPhotos).toBe(true);
   });
 });
