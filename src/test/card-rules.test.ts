@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatPaise } from "@/lib/format";
-import { experiences, getExperience } from "@/components/experiences/registry";
+import { getExperience } from "@/components/experiences/registry";
 
 describe("formatPaise", () => {
   it("renders ₹249 for 24900 paise (default template price)", () => {
@@ -26,8 +26,8 @@ describe("experience registry", () => {
   });
 
   it("only the photo puzzle needs photos", () => {
-    expect(experiences.birthday.needsPhotos).toBe(false);
-    expect(experiences.sorry.needsPhotos).toBe(false);
-    expect(experiences.photo_puzzle.needsPhotos).toBe(true);
+    expect(getExperience("birthday")?.needsPhotos).toBe(false);
+    expect(getExperience("sorry")?.needsPhotos).toBe(false);
+    expect(getExperience("photo_puzzle")?.needsPhotos).toBe(true);
   });
 });

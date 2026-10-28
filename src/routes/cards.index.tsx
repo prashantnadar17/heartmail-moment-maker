@@ -7,7 +7,7 @@ import { TemplateCard } from "@/components/template-card";
 
 export const Route = createFileRoute("/cards/")({
   validateSearch: (search: Record<string, unknown>) => ({
-    category: typeof search.category === "string" ? search.category : undefined,
+    category: typeof search["category"] === "string" ? search["category"] : undefined,
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(catalogQueryOptions),
   head: () => ({
@@ -104,7 +104,7 @@ function CardsPage() {
               </p>
               <Link
                 to="/cards"
-                search={{}}
+                search={{ category: undefined }}
                 className="mt-2 inline-block text-sm font-medium text-primary"
               >
                 Show all cards
