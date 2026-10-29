@@ -5,6 +5,7 @@ export type ExperiencePersonalization = {
   senderName: string;
   message: string;
   photos: string[];
+  videos: string[];
 };
 
 export type ExperienceProps = {

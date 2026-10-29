@@ -26,7 +26,8 @@ export function AnniversaryExperience({ personalization, mode = "live" }: Experi
   };
 
   const video = personalization.videos[0];
-  const photo = personalization.photos[Math.min(step, personalization.photos.length - 1)];
+  const milestone = MILESTONES[step] ?? MILESTONES[0]!;
+  const photo = personalization.photos[Math.min(step, Math.max(personalization.photos.length - 1, 0))];
 
   return (
     <ExperienceFrame className={`${mode === "demo" ? "h-full" : ""} bg-gradient-to-b from-night-wash to-primary/20`}>
