@@ -79,18 +79,22 @@ export const getDraftByReference = createServerFn({ method: "GET" })
       senderName?: string;
       message?: string;
       photos?: string[];
+      videos?: string[];
     };
 
     let photoUrls: string[] = [];
+    let videoUrls: string[] = [];
     const paths = (p.photos ?? []).filter((path) => !path.startsWith("http"));
-    if (paths.length > 0) {
+    const videoPaths = (p.videos ?? []).filter((path) => !path.startsWith("http"));
+    if (paths.length > 0 || videoPaths.length > 0) {
       const { data: signed, error: signError } = await supabaseAdmin.storage
         .from("card-media")
-        .createSignedUrls(paths, 60 * 60 * 24);
+        .createSignedUrls([...paths, ...videoPaths], 60 * 60 * 24);
       if (!signError && signed) {
-        photoUrls = paths
-          .map((path) => signed.find((s) => s.path === path)?.signedUrl ?? "")
-          .filter(Boolean);
+        const urlFor = (path: string) =>
+          signed.find((s) => s.path === path)?.signedUrl ?? "";
+        photoUrls = paths.map(urlFor).filter(Boolean);
+        videoUrls = videoPaths.map(urlFor).filter(Boolean);
       }
     }
 
@@ -103,6 +107,7 @@ export const getDraftByReference = createServerFn({ method: "GET" })
         senderName: p.senderName ?? "",
         message: p.message ?? "",
         photos: photoUrls,
+        videos: videoUrls,
       },
     };
   });
