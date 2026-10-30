@@ -1,0 +1,3 @@
+alter table public.templates drop constraint templates_experience_type_check;
+alter table public.templates add constraint templates_experience_type_check check (experience_type in ('birthday','sorry','photo_puzzle','proposal','anniversary','thankyou','missyou'));
+comment on constraint templates_experience_type_check on public.templates is 'Allowed card experience types; proposal/anniversary/thankyou/missyou added for the expanded catalogue';

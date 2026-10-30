@@ -15,6 +15,13 @@
       "when": 1793029192055,
       "tag": "0001_card_media_upload_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793348658189,
+      "tag": "0002_add_four_experience_types",
+      "breakpoints": true
     }
   ]
 }

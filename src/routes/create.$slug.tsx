@@ -18,6 +18,7 @@ import { createDraft } from "@/lib/drafts.functions";
 import { getExperience } from "@/components/experiences/registry";
 import { formatPaise } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
+import { MAX_PHOTOS, MAX_VIDEOS, checkMediaFile } from "@/lib/media";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
@@ -26,10 +27,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { ExperiencePersonalization } from "@/components/experiences/experience-frame";
 
-const MAX_PHOTOS = 6;
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
-
 type PhotoItem = { path: string; previewUrl: string };
+type VideoItem = { path: string; previewUrl: string };
 
 export const Route = createFileRoute("/create/$slug")({
   loader: async ({ params }) => {
@@ -89,6 +88,7 @@ function CreateCard() {
   const [senderName, setSenderName] = useState("");
   const [message, setMessage] = useState("");
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [videos, setVideos] = useState<VideoItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
@@ -124,45 +124,59 @@ function CreateCard() {
       message.trim() ||
       (messageField?.placeholder ?? "Every word here is just for you."),
     photos: photos.map((p) => p.previewUrl),
+    videos: videos.map((v) => v.previewUrl),
   };
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const room = MAX_PHOTOS - photos.length;
-    if (room <= 0) {
-      toast.error(`You can add up to ${MAX_PHOTOS} photos.`);
-      return;
-    }
-    const accepted: File[] = [];
-    for (const file of Array.from(files).slice(0, room)) {
-      if (!file.type.startsWith("image/")) {
-        toast.error(`${file.name} is not an image.`);
+    const accepted: { file: File; kind: "photo" | "video" }[] = [];
+    const fullByKind: Record<"photo" | "video", boolean> = { photo: false, video: false };
+    for (const file of Array.from(files)) {
+      const check = checkMediaFile(file);
+      if (!check.ok) {
+        toast.error(check.reason);
         continue;
       }
-      if (file.size > MAX_FILE_BYTES) {
-        toast.error(`${file.name} is larger than 10 MB.`);
+      const room =
+        check.kind === "photo" ? MAX_PHOTOS - photos.length : MAX_VIDEOS - videos.length;
+      if (room <= 0) {
+        fullByKind[check.kind] = true;
         continue;
       }
-      accepted.push(file);
+      accepted.push({ file, kind: check.kind });
     }
+    if (fullByKind.photo) toast.error(`You can add up to ${MAX_PHOTOS} photos.`);
+    if (fullByKind.video) toast.error(`Only ${MAX_VIDEOS} video is allowed per card.`);
     if (accepted.length === 0) return;
 
     setUploading(true);
     try {
       if (!uploadToken.current) uploadToken.current = crypto.randomUUID();
-      const saved: PhotoItem[] = [];
-      for (const [i, file] of accepted.entries()) {
+      const newPhotos: PhotoItem[] = [];
+      const newVideos: VideoItem[] = [];
+      let photoCount = photos.length;
+      let videoCount = videos.length;
+      for (const { file, kind } of accepted) {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
         // Path is relative to the "card-media" bucket.
-        const path = `${uploadToken.current}/${photos.length + i}-${safeName}`;
+        const path =
+          kind === "photo"
+            ? `${uploadToken.current}/photo-${photoCount++}-${safeName}`
+            : `${uploadToken.current}/video-${videoCount++}-${safeName}`;
         const { error } = await supabase.storage.from("card-media").upload(path, file, {
           contentType: file.type,
         });
         if (error) throw new Error(error.message);
-        saved.push({ path, previewUrl: URL.createObjectURL(file) });
+        if (kind === "photo") {
+          newPhotos.push({ path, previewUrl: URL.createObjectURL(file) });
+        } else {
+          newVideos.push({ path, previewUrl: URL.createObjectURL(file) });
+        }
       }
-      setPhotos((prev) => [...prev, ...saved]);
-      toast.success(saved.length === 1 ? "Photo added." : `${saved.length} photos added.`);
+      setPhotos((prev) => [...prev, ...newPhotos]);
+      setVideos((prev) => [...prev, ...newVideos]);
+      const total = newPhotos.length + newVideos.length;
+      toast.success(total === 1 ? "Media added." : `${total} items added.`);
     } catch {
       toast.error("Uploading didn't work. Please try again.");
     } finally {
@@ -172,6 +186,10 @@ function CreateCard() {
 
   const removePhoto = (item: PhotoItem) => {
     setPhotos((prev) => prev.filter((p) => p !== item));
+  };
+
+  const removeVideo = (item: VideoItem) => {
+    setVideos((prev) => prev.filter((v) => v !== item));
   };
 
   const finish = async () => {
@@ -185,6 +203,7 @@ function CreateCard() {
             senderName: senderName.trim(),
             message: message.trim(),
             photos: photos.map((p) => p.path),
+            videos: videos.map((v) => v.path),
           },
         },
       });
@@ -289,67 +308,96 @@ function CreateCard() {
                       </div>
                     ))}
 
-                    {meta.needsPhotos && (
-                      <div className="space-y-3 rounded-2xl border border-border bg-background p-4">
-                        <div className="flex items-center justify-between">
-                          <Label>
-                            Photos ({photos.length}/{MAX_PHOTOS})
-                          </Label>
-                          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
-                            {uploading ? (
-                              <Loader2 className="size-3.5 animate-spin" />
-                            ) : (
-                              <ImagePlus className="size-3.5" />
-                            )}
-                            Add photos
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              className="hidden"
-                              onChange={(e) => {
-                                void handleFiles(e.target.files);
-                                e.target.value = "";
-                              }}
-                            />
-                          </label>
-                        </div>
-                        {photos.length === 0 ? (
-                          <p className="text-xs text-muted-foreground">
-                            The first photo hides inside the puzzle. Add 1–6 photos, up to 10 MB
-                            each.
-                          </p>
-                        ) : (
-                          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                            {photos.map((photo, i) => (
-                              <div
-                                key={photo.path}
-                                className="group relative overflow-hidden rounded-xl border border-border"
-                              >
-                                <img
-                                  src={photo.previewUrl}
-                                  alt={`Photo ${i + 1}`}
-                                  className="aspect-square w-full object-cover"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => removePhoto(photo)}
-                                  aria-label={`Remove photo ${i + 1}`}
-                                  className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-background/80 text-foreground transition-colors hover:bg-destructive hover:text-destructive-foreground"
-                                >
-                                  <Trash2 className="size-3.5" />
-                                </button>
-                                {i === 0 && (
-                                  <span className="absolute bottom-1.5 left-1.5 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-semibold text-foreground">
-                                    In puzzle
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                    <div className="space-y-3 rounded-2xl border border-border bg-background p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <Label className="shrink-0">
+                          Photos ({photos.length}/{MAX_PHOTOS}) · Video ({videos.length}/
+                          {MAX_VIDEOS})
+                        </Label>
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+                          {uploading ? (
+                            <Loader2 className="size-3.5 animate-spin" />
+                          ) : (
+                            <ImagePlus className="size-3.5" />
+                          )}
+                          Add media
+                          <input
+                            type="file"
+                            accept="image/*,video/*"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                              void handleFiles(e.target.files);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
                       </div>
-                    )}
+                      {photos.length === 0 && videos.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          {meta.needsPhotos
+                            ? "The first photo hides inside the puzzle. Add 1–3 photos, up to 10 MB each, plus 1 video up to 50 MB."
+                            : "Optional: add up to 3 photos (10 MB each) and 1 video (50 MB) to make it personal."}
+                        </p>
+                      ) : (
+                        <>
+                          {photos.length > 0 && (
+                            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                              {photos.map((photo, i) => (
+                                <div
+                                  key={photo.path}
+                                  className="group relative overflow-hidden rounded-xl border border-border"
+                                >
+                                  <img
+                                    src={photo.previewUrl}
+                                    alt={`Photo ${i + 1}`}
+                                    className="aspect-square w-full object-cover"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removePhoto(photo)}
+                                    aria-label={`Remove photo ${i + 1}`}
+                                    className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-background/80 text-foreground transition-colors hover:bg-destructive hover:text-destructive-foreground"
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </button>
+                                  {i === 0 && meta.needsPhotos && (
+                                    <span className="absolute bottom-1.5 left-1.5 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-semibold text-foreground">
+                                      In puzzle
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {videos.map((video, i) => (
+                            <div
+                              key={video.path}
+                              className="relative overflow-hidden rounded-xl border border-border"
+                            >
+                              <video
+                                src={video.previewUrl}
+                                muted
+                                playsInline
+                                preload="metadata"
+                                className="aspect-video w-full bg-black"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeVideo(video)}
+                                aria-label={`Remove video ${i + 1}`}
+                                className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-background/80 text-foreground transition-colors hover:bg-destructive hover:text-destructive-foreground"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                              <span className="absolute bottom-1.5 left-1.5 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-semibold text-foreground">
+                                Video {i + 1}
+                              </span>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   <Button
