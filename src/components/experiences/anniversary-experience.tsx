@@ -79,7 +79,7 @@ export function AnniversaryExperience({ personalization, mode = "live" }: Experi
               {photo ? (
                 <img
                   src={photo}
-                  alt={MILESTONES[step].label}
+                  alt={milestone.label}
                   className="h-40 w-full rounded-2xl border border-border object-cover"
                 />
               ) : (
@@ -89,9 +89,9 @@ export function AnniversaryExperience({ personalization, mode = "live" }: Experi
               )}
               <div>
                 <p className="font-display text-xl font-semibold text-foreground">
-                  {MILESTONES[step].label}
+                  {milestone.label}
                 </p>
-                <p className="mt-1 text-sm text-muted-foreground">{MILESTONES[step].note}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{milestone.note}</p>
               </div>
               <button
                 type="button"
