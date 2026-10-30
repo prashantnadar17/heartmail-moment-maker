@@ -5,7 +5,8 @@ const personalizationSchema = z.object({
   recipientName: z.string().trim().min(1).max(60),
   senderName: z.string().trim().min(1).max(60),
   message: z.string().trim().min(1).max(2000),
-  photos: z.array(z.string().min(1).max(600)).max(6).default([]),
+  photos: z.array(z.string().min(1).max(600)).max(3).default([]),
+  videos: z.array(z.string().min(1).max(600)).max(1).default([]),
 });
 
 export type SavedDraft = {
@@ -17,6 +18,7 @@ export type SavedDraft = {
     senderName: string;
     message: string;
     photos: string[];
+    videos: string[];
   };
 };
 
