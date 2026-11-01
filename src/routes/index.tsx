@@ -90,6 +90,7 @@ function Index() {
                   message:
                     "Another year of you being absolutely wonderful. May every candle you blow out come back as a wish come true.",
                   photos: [],
+                  videos: [],
                 }}
               />
               <p className="mt-3 text-center text-xs text-muted-foreground">
