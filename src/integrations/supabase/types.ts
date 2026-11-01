@@ -50,6 +50,7 @@ export type Database = {
       drafts: {
         Row: {
           created_at: string
+          deliver_at: string | null
           expires_at: string
           id: string
           owner_id: string | null
@@ -61,6 +62,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deliver_at?: string | null
           expires_at?: string
           id?: string
           owner_id?: string | null
@@ -72,6 +74,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deliver_at?: string | null
           expires_at?: string
           id?: string
           owner_id?: string | null
