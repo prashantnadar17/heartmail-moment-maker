@@ -17,7 +17,7 @@ export async function getAiText(
   },
   request: Request,
 ): Promise<AiTextResult> {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) {
     return { ok: false, error: "AI is not configured yet. Please try again later." };
   }
