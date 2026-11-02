@@ -23,3 +23,17 @@ export function validateDeliverAt(value: string | null | undefined): DeliverAtCh
   }
   return { ok: true, iso: when.toISOString() };
 }
+
+/**
+ * Whether a card should stay hidden from its recipient right now because its
+ * scheduled delivery time hasn't arrived yet.
+ */
+export function isLockedForDelivery(
+  deliverAt: string | null | undefined,
+  now: number = Date.now(),
+): boolean {
+  if (!deliverAt) return false;
+  const when = new Date(deliverAt);
+  if (Number.isNaN(when.getTime())) return false;
+  return when.getTime() > now;
+}

@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { validateDeliverAt } from "./schedule";
 
 const personalizationSchema = z.object({
   recipientName: z.string().trim().min(1).max(60),
@@ -13,6 +14,7 @@ export type SavedDraft = {
   reference: string;
   experienceType: string;
   templateName: string;
+  deliverAt: string | null;
   personalization: {
     recipientName: string;
     senderName: string;
@@ -23,16 +25,21 @@ export type SavedDraft = {
 };
 
 export const createDraft = createServerFn({ method: "POST" })
-  .inputValidator((data: { templateSlug: string; personalization: unknown }) =>
+  .inputValidator((data: { templateSlug: string; deliverAt?: string; personalization: unknown }) =>
     z
       .object({
         templateSlug: z.string().min(1).max(120),
+        deliverAt: z.string().max(40).optional().default(""),
         personalization: personalizationSchema,
       })
       .parse(data),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const deliverCheck = validateDeliverAt(data.deliverAt);
+    if (!deliverCheck.ok) throw new Error(deliverCheck.reason);
+    const deliverAt = deliverCheck.iso || null;
 
     const { data: template, error: templateError } = await supabaseAdmin
       .from("templates")
@@ -51,6 +58,7 @@ export const createDraft = createServerFn({ method: "POST" })
       template_id: template.id,
       personalization: data.personalization,
       status: "draft",
+      deliver_at: deliverAt,
       expires_at: expiresAt,
     });
     if (error) throw new Error(error.message);
@@ -66,7 +74,7 @@ export const getDraftByReference = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("drafts")
       .select(
-        "session_reference, personalization, expires_at, templates(name, experience_type)",
+        "session_reference, personalization, expires_at, deliver_at, templates(name, experience_type)",
       )
       .eq("session_reference", reference)
       .maybeSingle();
@@ -102,6 +110,7 @@ export const getDraftByReference = createServerFn({ method: "GET" })
       reference: row.session_reference,
       experienceType: row.templates?.experience_type ?? "birthday",
       templateName: row.templates?.name ?? "Card",
+      deliverAt: row.deliver_at ?? null,
       personalization: {
         recipientName: p.recipientName ?? "",
         senderName: p.senderName ?? "",

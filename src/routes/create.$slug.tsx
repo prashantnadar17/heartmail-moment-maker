@@ -353,6 +353,71 @@ function CreateCard() {
                       </div>
                     ))}
 
+                    <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="size-4 text-primary" />
+                        <p className="text-sm font-semibold text-foreground">Stuck for words?</p>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="ai-occasion">Occasion</Label>
+                          <Input
+                            id="ai-occasion"
+                            value={aiOccasion}
+                            onChange={(e) => setAiOccasion(e.target.value)}
+                            placeholder={`e.g. ${template.name}`}
+                            maxLength={120}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="ai-relationship">Your relationship</Label>
+                          <Input
+                            id="ai-relationship"
+                            value={aiRelationship}
+                            onChange={(e) => setAiRelationship(e.target.value)}
+                            placeholder="e.g. my best friend"
+                            maxLength={120}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="ai-tone">Tone</Label>
+                          <select
+                            id="ai-tone"
+                            value={aiTone}
+                            onChange={(e) => setAiTone(e.target.value)}
+                            className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground"
+                          >
+                            {["Heartfelt", "Playful", "Funny", "Romantic", "Formal", "Poetic"].map(
+                              (tone) => (
+                                <option key={tone} value={tone}>
+                                  {tone}
+                                </option>
+                              ),
+                            )}
+                          </select>
+                        </div>
+                        <div className="flex items-end">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            className="w-full rounded-xl"
+                            disabled={drafting}
+                            onClick={() => void draftWithAi()}
+                          >
+                            {drafting ? (
+                              <Loader2 className="mr-1 size-4 animate-spin" />
+                            ) : (
+                              <Sparkles className="mr-1 size-4" />
+                            )}
+                            Draft with AI
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        It writes one message into the box above — edit it any way you like.
+                      </p>
+                    </div>
+
                     <div className="space-y-3 rounded-2xl border border-border bg-background p-4">
                       <div className="flex items-center justify-between gap-2">
                         <Label className="shrink-0">
@@ -472,6 +537,22 @@ function CreateCard() {
                   <p className="mt-2 text-sm text-muted-foreground">
                     Play with the preview. Go back any time to change your words.
                   </p>
+                  <div className="mt-6 space-y-2 rounded-2xl border border-border bg-background p-4">
+                    <Label htmlFor="deliver-at" className="flex items-center gap-1.5">
+                      <CalendarClock className="size-4" />
+                      Deliver later (optional)
+                    </Label>
+                    <Input
+                      id="deliver-at"
+                      type="datetime-local"
+                      value={deliverAt}
+                      onChange={(e) => setDeliverAt(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Pick a date and time and the card stays locked until then. Leave empty to
+                      share right away.
+                    </p>
+                  </div>
                   <div className="mt-6 flex flex-wrap gap-3">
                     <Button
                       size="lg"
@@ -506,10 +587,12 @@ function CreateCard() {
                     </span>
                     <div>
                       <h2 className="font-display text-xl font-semibold text-foreground">
-                        Your card is live
+                        {deliverAt ? "Scheduled!" : "Your card is live"}
                       </h2>
                       <p className="text-sm text-muted-foreground">
-                        Send this link to {personalization.recipientName}.
+                        {deliverAt
+                          ? `It opens on ${new Date(deliverAt).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" })}. Share the link now — it unlocks then.`
+                          : `Send this link to ${personalization.recipientName}.`}
                       </p>
                     </div>
                   </div>
@@ -540,8 +623,10 @@ function CreateCard() {
                     </Button>
                   </div>
                   <p className="mt-4 text-xs text-muted-foreground">
-                    The link works for 90 days. Payments open soon — until then, sharing is
-                    completely free.
+                    The link works for 90 days.{" "}
+                    {deliverAt
+                      ? "It stays locked until the time you chose."
+                      : "Payments open soon — until then, sharing is completely free."}
                   </p>
                 </div>
               )}
