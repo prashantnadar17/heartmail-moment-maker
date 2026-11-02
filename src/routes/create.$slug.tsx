@@ -4,17 +4,21 @@ import { useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  CalendarClock,
   Check,
   Copy,
   ImagePlus,
   Loader2,
   MessageCircle,
   PartyPopper,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getTemplate } from "@/lib/catalog.functions";
 import { createDraft } from "@/lib/drafts.functions";
+import { draftCardMessage } from "@/lib/ai.functions";
+import { validateDeliverAt } from "@/lib/schedule";
 import { getExperience } from "@/components/experiences/registry";
 import { formatPaise } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
@@ -92,9 +96,15 @@ function CreateCard() {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
+  const [aiOccasion, setAiOccasion] = useState("");
+  const [aiRelationship, setAiRelationship] = useState("");
+  const [aiTone, setAiTone] = useState("Heartfelt");
+  const [drafting, setDrafting] = useState(false);
+  const [deliverAt, setDeliverAt] = useState("");
   const uploadToken = useRef<string | null>(null);
 
   const createDraftFn = useServerFn(createDraft);
+  const draftAiFn = useServerFn(draftCardMessage);
 
   if (!meta || !Experience) {
     return (
@@ -192,12 +202,47 @@ function CreateCard() {
     setVideos((prev) => prev.filter((v) => v !== item));
   };
 
+  const draftWithAi = async () => {
+    const relationship = aiRelationship.trim();
+    if (!relationship) {
+      toast.error("Tell us who it's for — e.g. 'my best friend'.");
+      return;
+    }
+    setDrafting(true);
+    try {
+      const result = await draftAiFn({
+        data: {
+          occasion: aiOccasion.trim() || template.name,
+          relationship,
+          tone: aiTone,
+          recipientName: recipientName.trim() || undefined,
+        },
+      });
+      if (result.ok) {
+        setMessage(result.text);
+        toast.success("Message drafted — edit it any way you like.");
+      } else {
+        toast.error(result.error);
+      }
+    } catch {
+      toast.error("The AI helper didn't respond. Please try again.");
+    } finally {
+      setDrafting(false);
+    }
+  };
+
   const finish = async () => {
+    const deliverCheck = validateDeliverAt(deliverAt);
+    if (!deliverCheck.ok) {
+      toast.error(deliverCheck.reason);
+      return;
+    }
     setSaving(true);
     try {
       const result = await createDraftFn({
         data: {
           templateSlug: template.slug,
+          deliverAt: deliverCheck.iso,
           personalization: {
             recipientName: recipientName.trim(),
             senderName: senderName.trim(),
