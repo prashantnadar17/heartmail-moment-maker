@@ -1,6 +1,7 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { Heart } from "lucide-react";
+import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
+import { Gift, Heart, RefreshCw } from "lucide-react";
 import { getDraftByReference } from "@/lib/drafts.functions";
+import { isLockedForDelivery } from "@/lib/schedule";
 import { getExperience } from "@/components/experiences/registry";
 import { BirthdayExperience } from "@/components/experiences/birthday-experience";
 import { Button } from "@/components/ui/button";
@@ -9,14 +10,17 @@ export const Route = createFileRoute("/c/$reference")({
   loader: async ({ params }) => {
     const draft = await getDraftByReference({ data: params.reference });
     if (!draft) throw notFound();
-    return { draft };
+    const lockedAt =
+      draft.deliverAt && isLockedForDelivery(draft.deliverAt) ? draft.deliverAt : null;
+    return { draft, lockedAt };
   },
   head: ({ loaderData }) => {
     const name = loaderData?.draft.personalization.recipientName;
     const title = name ? `A little surprise for ${name} 💌` : "A card made for you";
-    const description =
-      loaderData?.draft.personalization.message.slice(0, 150) ??
-      "Someone made this interactive card for you on HeartMuse.";
+    const description = loaderData?.lockedAt
+      ? "Someone made this interactive card for you on HeartMuse. It opens at a special time."
+      : (loaderData?.draft.personalization.message.slice(0, 150) ??
+        "Someone made this interactive card for you on HeartMuse.");
     return {
       meta: [
         { title },
@@ -49,8 +53,39 @@ export const Route = createFileRoute("/c/$reference")({
   ),
 });
 
+function formatOpenTime(iso: string) {
+  return new Date(iso).toLocaleString("en-IN", {
+    dateStyle: "full",
+    timeStyle: "short",
+  });
+}
+
+function LockedGate({ opensAt }: { opensAt: string }) {
+  const router = useRouter();
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-hero-wash px-4 text-center">
+      <span className="flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <Gift className="size-8" />
+      </span>
+      <h1 className="font-display text-2xl font-semibold text-foreground">
+        This surprise is still being kept safe
+      </h1>
+      <p className="max-w-sm text-sm text-muted-foreground">
+        It opens on <span className="font-medium text-foreground">{formatOpenTime(opensAt)}</span>.
+        Come back then — the card will be waiting.
+      </p>
+      <Button variant="outline" className="rounded-xl" onClick={() => void router.invalidate()}>
+        <RefreshCw className="mr-1 size-4" />
+        Check again
+      </Button>
+    </div>
+  );
+}
+
 function ViewCard() {
-  const { draft } = Route.useLoaderData();
+  const { draft, lockedAt } = Route.useLoaderData();
+  if (lockedAt) return <LockedGate opensAt={lockedAt} />;
+
   const meta = getExperience(draft.experienceType);
   const Experience = meta?.component ?? BirthdayExperience;
 
