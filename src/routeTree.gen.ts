@@ -14,6 +14,7 @@ import { Route as CReferenceRouteImport } from './routes/c.$reference'
 import { Route as CardsIndexRouteImport } from './routes/cards.index'
 import { Route as CardsSlugRouteImport } from './routes/cards.$slug'
 import { Route as CreateSlugRouteImport } from './routes/create.$slug'
+import { Route as ApiPublicWebhooksRazorpayRouteImport } from './routes/api/public/webhooks/razorpay'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +41,12 @@ const CreateSlugRoute = CreateSlugRouteImport.update({
   path: '/create/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWebhooksRazorpayRoute =
+  ApiPublicWebhooksRazorpayRouteImport.update({
+    id: '/api/public/webhooks/razorpay',
+    path: '/api/public/webhooks/razorpay',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +54,7 @@ export interface FileRoutesByFullPath {
   '/cards/$slug': typeof CardsSlugRoute
   '/create/$slug': typeof CreateSlugRoute
   '/cards/': typeof CardsIndexRoute
+  '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +62,7 @@ export interface FileRoutesByTo {
   '/cards/$slug': typeof CardsSlugRoute
   '/create/$slug': typeof CreateSlugRoute
   '/cards': typeof CardsIndexRoute
+  '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +71,25 @@ export interface FileRoutesById {
   '/cards/$slug': typeof CardsSlugRoute
   '/create/$slug': typeof CreateSlugRoute
   '/cards/': typeof CardsIndexRoute
+  '/api/public/webhooks/razorpay': typeof ApiPublicWebhooksRazorpayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/c/$reference' | '/cards/$slug' | '/create/$slug' | '/cards/'
+    | '/'
+    | '/c/$reference'
+    | '/cards/$slug'
+    | '/create/$slug'
+    | '/cards/'
+    | '/api/public/webhooks/razorpay'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/c/$reference' | '/cards/$slug' | '/create/$slug' | '/cards'
+  to:
+    | '/'
+    | '/c/$reference'
+    | '/cards/$slug'
+    | '/create/$slug'
+    | '/cards'
+    | '/api/public/webhooks/razorpay'
   id:
     | '__root__'
     | '/'
@@ -76,6 +97,7 @@ export interface FileRouteTypes {
     | '/cards/$slug'
     | '/create/$slug'
     | '/cards/'
+    | '/api/public/webhooks/razorpay'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -84,6 +106,7 @@ export interface RootRouteChildren {
   CardsSlugRoute: typeof CardsSlugRoute
   CreateSlugRoute: typeof CreateSlugRoute
   CardsIndexRoute: typeof CardsIndexRoute
+  ApiPublicWebhooksRazorpayRoute: typeof ApiPublicWebhooksRazorpayRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -123,6 +146,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreateSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/razorpay': {
+      id: '/api/public/webhooks/razorpay'
+      path: '/api/public/webhooks/razorpay'
+      fullPath: '/api/public/webhooks/razorpay'
+      preLoaderRoute: typeof ApiPublicWebhooksRazorpayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -132,6 +162,7 @@ const rootRouteChildren: RootRouteChildren = {
   CardsSlugRoute: CardsSlugRoute,
   CreateSlugRoute: CreateSlugRoute,
   CardsIndexRoute: CardsIndexRoute,
+  ApiPublicWebhooksRazorpayRoute: ApiPublicWebhooksRazorpayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
