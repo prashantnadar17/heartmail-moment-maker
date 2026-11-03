@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      cards: {
+        Row: {
+          created_at: string
+          draft_id: string
+          expires_at: string | null
+          id: string
+          mode: string
+          order_id: string
+          public_token: string
+          published_at: string
+          revoked_at: string | null
+          status: string
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          draft_id: string
+          expires_at?: string | null
+          id?: string
+          mode?: string
+          order_id: string
+          public_token: string
+          published_at?: string
+          revoked_at?: string | null
+          status?: string
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          draft_id?: string
+          expires_at?: string | null
+          id?: string
+          mode?: string
+          order_id?: string
+          public_token?: string
+          published_at?: string
+          revoked_at?: string | null
+          status?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cards_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cards_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -90,6 +147,106 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          currency: string
+          discount_amount_paise: number
+          draft_id: string
+          final_amount_paise: number
+          id: string
+          mode: string
+          original_amount_paise: number
+          payment_provider: string
+          provider_order_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          discount_amount_paise?: number
+          draft_id: string
+          final_amount_paise: number
+          id?: string
+          mode?: string
+          original_amount_paise: number
+          payment_provider?: string
+          provider_order_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          discount_amount_paise?: number
+          draft_id?: string
+          final_amount_paise?: number
+          id?: string
+          mode?: string
+          original_amount_paise?: number
+          payment_provider?: string
+          provider_order_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount_paise: number
+          created_at: string
+          currency: string
+          id: string
+          mode: string
+          order_id: string
+          provider_payment_id: string
+          provider_signature: string | null
+          status: string
+          verified_at: string | null
+        }
+        Insert: {
+          amount_paise: number
+          created_at?: string
+          currency?: string
+          id?: string
+          mode?: string
+          order_id: string
+          provider_payment_id: string
+          provider_signature?: string | null
+          status?: string
+          verified_at?: string | null
+        }
+        Update: {
+          amount_paise?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          mode?: string
+          order_id?: string
+          provider_payment_id?: string
+          provider_signature?: string | null
+          status?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -195,6 +352,30 @@ export type Database = {
           is_approved?: boolean
           location?: string | null
           rating?: number
+        }
+        Relationships: []
+      }
+      webhook_events: {
+        Row: {
+          event_id: string
+          id: string
+          payload: Json | null
+          processed_at: string
+          provider: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          payload?: Json | null
+          processed_at?: string
+          provider: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          payload?: Json | null
+          processed_at?: string
+          provider?: string
         }
         Relationships: []
       }
