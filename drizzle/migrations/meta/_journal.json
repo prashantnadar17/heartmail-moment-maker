@@ -29,6 +29,13 @@
       "when": 1793550494537,
       "tag": "0003_drafts_scheduled_delivery",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793711885804,
+      "tag": "0004_add_orders_payments_cards_tables",
+      "breakpoints": true
     }
   ]
 }
