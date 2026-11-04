@@ -626,13 +626,102 @@ function CreateCard() {
                     </Button>
                   </div>
                   <p className="mt-4 text-xs text-muted-foreground">
-                    Launch price {formatPaise(template.pricePaise)} · payments open soon ·
-                    sharing this preview link is free.
+                    Launch price {formatPaise(template.pricePaise)} — one payment, then the link is
+                    yours to share freely.
                   </p>
                 </div>
               )}
 
               {step === 3 && reference && (
+                <div className="rounded-3xl border border-border bg-card p-6 shadow-card sm:p-8">
+                  <div className="flex items-center gap-3">
+                    <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <ShieldCheck className="size-5" />
+                    </span>
+                    <div>
+                      <h2 className="font-display text-xl font-semibold text-foreground">
+                        Secure checkout
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        One payment and your card is published with its own private link.
+                      </p>
+                    </div>
+                  </div>
+
+                  {orderLoading && (
+                    <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="size-4 animate-spin" />
+                      Preparing your order…
+                    </div>
+                  )}
+
+                  {orderError && (
+                    <div className="mt-6 space-y-3">
+                      <p className="text-sm text-destructive">{orderError}</p>
+                      <Button
+                        variant="outline"
+                        className="rounded-xl"
+                        onClick={() => setStep(2)}
+                      >
+                        Back and retry
+                      </Button>
+                    </div>
+                  )}
+
+                  {order && (
+                    <div className="mt-6 space-y-2 rounded-2xl border border-border bg-background p-4 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Card price</span>
+                        <span className="text-foreground">
+                          {formatPaise(order.originalPaise)}
+                        </span>
+                      </div>
+                      {order.discountPaise > 0 && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Launch offer</span>
+                          <span className="font-medium text-primary">
+                            −{formatPaise(order.discountPaise)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between border-t border-border pt-2">
+                        <span className="font-semibold text-foreground">Total</span>
+                        <span className="font-display text-lg font-semibold text-foreground">
+                          {formatPaise(order.amountPaise)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {order && (
+                    <>
+                      <Button
+                        size="lg"
+                        className="mt-6 w-full rounded-xl sm:w-auto"
+                        disabled={paying}
+                        onClick={() => void pay()}
+                      >
+                        {paying && <Loader2 className="mr-1 size-4 animate-spin" />}
+                        Pay {formatPaise(order.amountPaise)} &amp; publish
+                      </Button>
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        Test mode: no real money moves, but the payment is verified through the
+                        same secure checks a live card will use.
+                      </p>
+                    </>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    className="mt-6 rounded-xl"
+                    onClick={() => setStep(1)}
+                  >
+                    Edit details
+                  </Button>
+                </div>
+              )}
+
+              {step === 4 && reference && (
                 <div className="rounded-3xl border border-border bg-card p-6 shadow-card sm:p-8">
                   <div className="flex items-center gap-3">
                     <span className="flex size-11 items-center justify-center rounded-xl bg-coral/15 text-coral">
