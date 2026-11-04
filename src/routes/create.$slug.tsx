@@ -93,7 +93,7 @@ function CreateCard() {
   const meta = getExperience(template.experienceType);
   const Experience = meta?.component;
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [recipientName, setRecipientName] = useState("");
   const [senderName, setSenderName] = useState("");
   const [message, setMessage] = useState("");
