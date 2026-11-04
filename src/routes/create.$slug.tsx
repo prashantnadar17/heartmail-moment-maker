@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -10,6 +10,7 @@ import {
   ImagePlus,
   Loader2,
   MessageCircle,
+  ShieldCheck,
   PartyPopper,
   Sparkles,
   Trash2,
@@ -18,6 +19,11 @@ import { toast } from "sonner";
 import { getTemplate } from "@/lib/catalog.functions";
 import { createDraft } from "@/lib/drafts.functions";
 import { draftCardMessage } from "@/lib/ai.functions";
+import {
+  createCheckoutOrder,
+  paySandboxOrder,
+  type CheckoutOrder,
+} from "@/lib/payments.functions";
 import { validateDeliverAt } from "@/lib/schedule";
 import { getExperience } from "@/components/experiences/registry";
 import { formatPaise } from "@/lib/format";
@@ -101,10 +107,16 @@ function CreateCard() {
   const [aiTone, setAiTone] = useState("Heartfelt");
   const [drafting, setDrafting] = useState(false);
   const [deliverAt, setDeliverAt] = useState("");
+  const [order, setOrder] = useState<CheckoutOrder | null>(null);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [paying, setPaying] = useState(false);
   const uploadToken = useRef<string | null>(null);
 
   const createDraftFn = useServerFn(createDraft);
   const draftAiFn = useServerFn(draftCardMessage);
+  const checkoutFn = useServerFn(createCheckoutOrder);
+  const payFn = useServerFn(paySandboxOrder);
 
   if (!meta || !Experience) {
     return (
