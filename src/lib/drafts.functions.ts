@@ -74,13 +74,15 @@ export const getDraftByReference = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("drafts")
       .select(
-        "session_reference, personalization, expires_at, deliver_at, templates(name, experience_type)",
+        "status, session_reference, personalization, expires_at, deliver_at, templates(name, experience_type)",
       )
       .eq("session_reference", reference)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) return null;
     if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) return null;
+    // A draft is only a real card once a verified payment published it.
+    if (row.status !== "published") return null;
 
     const p = (row.personalization ?? {}) as {
       recipientName?: string;
