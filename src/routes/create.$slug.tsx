@@ -297,6 +297,24 @@ function CreateCard() {
     }
   };
 
+  const pay = async () => {
+    if (!order) return;
+    setPaying(true);
+    try {
+      const outcome = await payFn({ data: { orderRef: order.orderRef } });
+      if (outcome.ok) {
+        setStep(4);
+        toast.success("Payment verified — your card is live!");
+      } else {
+        toast.error(outcome.error);
+      }
+    } catch {
+      toast.error("Payment didn't go through. Please try again.");
+    } finally {
+      setPaying(false);
+    }
+  };
+
   const shareUrl = reference ? `${window.location.origin}/c/${reference}` : "";
 
   const copyLink = async () => {
@@ -308,7 +326,7 @@ function CreateCard() {
     }
   };
 
-  const stepLabels = ["Details", "Preview", "Share"];
+  const stepLabels = ["Details", "Preview", "Checkout", "Share"];
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
