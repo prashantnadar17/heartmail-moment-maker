@@ -614,7 +614,7 @@ function CreateCard() {
                       disabled={saving}
                     >
                       {saving && <Loader2 className="mr-1 size-4 animate-spin" />}
-                      Save & get my link
+                      Save & checkout
                     </Button>
                     <Button
                       size="lg"
