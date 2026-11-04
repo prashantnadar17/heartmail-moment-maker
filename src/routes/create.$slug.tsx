@@ -118,6 +118,29 @@ function CreateCard() {
   const checkoutFn = useServerFn(createCheckoutOrder);
   const payFn = useServerFn(paySandboxOrder);
 
+  // Preparing the order is safe to repeat — the server reuses the open order.
+  useEffect(() => {
+    if (step !== 3 || !reference || order || orderLoading) return;
+    let cancelled = false;
+    setOrderLoading(true);
+    setOrderError(null);
+    checkoutFn({ data: { reference } })
+      .then((created) => {
+        if (!cancelled) setOrder(created);
+      })
+      .catch(() => {
+        if (!cancelled) setOrderError("Couldn't start checkout. Please try again.");
+      })
+      .finally(() => {
+        if (!cancelled) setOrderLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, reference]);
+
+
   if (!meta || !Experience) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
@@ -266,7 +289,7 @@ function CreateCard() {
       });
       setReference(result.reference);
       setStep(3);
-      toast.success("Your card is ready to share!");
+      toast.success("Saved! One step left — checkout.");
     } catch {
       toast.error("Saving your card didn't work. Please try again.");
     } finally {
